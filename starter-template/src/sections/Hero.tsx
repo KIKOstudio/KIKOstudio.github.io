@@ -6,14 +6,19 @@ import designExample2Image from "@/assets/images/design-example-2.png";
 import Image from "next/image";
 import Pointer from "@/components/Pointer";
 import { motion, useAnimate } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import cursorYouImage from "@/assets/images/cursor-you.svg";
+import emailjs from "@emailjs/browser";
 
 export default function Hero() {
     const [leftDesignScope, leftDesignAnimate] = useAnimate();
     const [leftPointerScope, leftPointerAnimate] = useAnimate();
     const [rightDesignScope, rightDesignAnimate] = useAnimate();
     const [rightPointerScope, rightPointerAnimate] = useAnimate();
+    
+    const [email, setEmail] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
 
     useEffect(() => {
         leftDesignAnimate([
@@ -51,7 +56,56 @@ export default function Hero() {
                 { duration: 0.5 },
             ],
         ]);
+
+        // Initialize EmailJS with your public key
+        emailjs.init("8kJbRPm_u_JHB-zvx");
     }, []);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        setSubmitStatus("idle");
+
+        try {
+            // Send automatic welcome email to user via EmailJS
+            await emailjs.send(
+                "KIKOstudio",
+                "template_zi79rzg",
+                {
+                    to_email: email,
+                    to_name: email.split("@")[0],
+                    from_name: "KIKO Studio",
+                    message: "Thank you for signing up! We're excited to have you on board.",
+                }
+            );
+
+            // Send notification to you via Formspree
+            await fetch("https://formspree.io/f/mzzjydpl", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    email: email,
+                    _subject: "New Sign Up - KIKO Studio",
+                }),
+            });
+
+            setSubmitStatus("success");
+            setEmail("");
+            
+            // Reset success message after 3 seconds
+            setTimeout(() => setSubmitStatus("idle"), 3000);
+        } catch (error) {
+            console.error("Error submitting form:", error);
+            setSubmitStatus("error");
+            
+            // Reset error message after 3 seconds
+            setTimeout(() => setSubmitStatus("idle"), 3000);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     return (
         <section
@@ -96,7 +150,7 @@ export default function Hero() {
                     ref={rightDesignScope}
                     initial={{ opacity: 0, x: 100, y: 100 }}
                     drag
-                     onDragEnd={() => {
+                    onDragEnd={() => {
                         leftDesignAnimate(
                             rightDesignScope.current,
                             { x: 0, y: 0 },
@@ -141,20 +195,42 @@ export default function Hero() {
                     helping you save time and stay focused on what truly matters.
                 </p>
 
-                <form className="flex items-center border border-white/15 rounded-full p-2 mt-8 max-w-lg mx-auto overflow-hidden">
-                    <input
-                        className="bg-transparent px-4 flex-1 min-w-0 text-sm md:text-base focus:outline-none w-full"
-                        type="email"
-                        placeholder="Enter your email"
-                    />
-                    <Button
-                        className="whitespace-nowrap flex-shrink-0"
-                        type="submit"
-                        variant="primary"
-                        size="sm"
-                    >
-                        Sign Up
-                    </Button>
+                <form 
+                    onSubmit={handleSubmit}
+                    className="flex flex-col items-center mt-8 max-w-lg mx-auto"
+                >
+                    <div className="flex items-center border border-white/15 rounded-full p-2 w-full overflow-hidden">
+                        <input
+                            className="bg-transparent px-4 flex-1 min-w-0 text-sm md:text-base focus:outline-none w-full"
+                            type="email"
+                            placeholder="Enter your email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                            disabled={isSubmitting}
+                        />
+                        <Button
+                            className="whitespace-nowrap flex-shrink-0"
+                            type="submit"
+                            variant="primary"
+                            size="sm"
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? "Signing Up..." : "Sign Up"}
+                        </Button>
+                    </div>
+                    
+                    {submitStatus === "success" && (
+                        <p className="text-green-400 text-sm mt-2">
+                            Successfully signed up! Check your email.
+                        </p>
+                    )}
+                    
+                    {submitStatus === "error" && (
+                        <p className="text-red-400 text-sm mt-2">
+                            Something went wrong. Please try again.
+                        </p>
+                    )}
                 </form>
             </div>
         </section>

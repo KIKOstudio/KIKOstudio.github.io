@@ -2,12 +2,13 @@
   "name": "frontend-tribe-design-saas-landing-page",
   "version": "0.1.0",
   "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
+"scripts": {
+  "dev": "next dev",
+  "build": "next build --no-lint",
+  "start": "next start",
+  "lint": "next lint",
+  "deploy": "next build && next export && gh-pages -d out"
+},
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
     "framer-motion": "^11.11.17",
